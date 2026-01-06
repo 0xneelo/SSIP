@@ -244,10 +244,11 @@ img {
 /* Hero Section */
 .hero {
     min-height: 100vh;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: var(--space-4xl);
+    text-align: center;
     padding: calc(80px + var(--space-4xl)) var(--space-xl) var(--space-4xl);
     max-width: 1280px;
     margin: 0 auto;
@@ -256,11 +257,24 @@ img {
     overflow: hidden;
 }
 
-.hero-content,
-.hero-visual {
+.hero-content {
     position: relative;
     z-index: 2;
     pointer-events: auto;
+    max-width: 700px;
+}
+
+.hero-subtitle {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-stats {
+    justify-content: center;
+}
+
+.hero-actions {
+    justify-content: center;
 }
 
 .hero-badge {
@@ -391,17 +405,16 @@ img {
     font-size: 1.125rem;
 }
 
-/* Protocol Diagram */
+/* Protocol Diagram - Hidden (replaced by Three.js solar system) */
 .hero-visual {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: none; /* Three.js handles the visual now */
 }
 
 .protocol-diagram {
     position: relative;
     width: 400px;
     height: 400px;
+    display: none;
 }
 
 .diagram-ring {
