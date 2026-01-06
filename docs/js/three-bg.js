@@ -565,50 +565,70 @@ class SSIPBackground {
         this.particleGroup.rotation.x = 0.3 + this.mouse.y * 0.2;
         
         // === ANIMATE SUN ===
-        // Sun pulse (from clicks or natural)
+        const sunHovered = this.hoveredObject === 'sun';
+        
+        // Sun pulse (from clicks or natural) - bigger when hovered
         if (this.sunPulse > 1) {
             this.sunPulse -= 0.02;
         }
-        const basePulse = 1 + Math.sin(this.time * 2) * 0.05;
+        const sunBasePulse = sunHovered ? 1.15 : 1;
+        const sunPulseAmount = sunHovered ? 0.03 : 0.05;
+        const basePulse = sunBasePulse + Math.sin(this.time * 2) * sunPulseAmount;
         const pulse = basePulse * (this.sunPulse || 1);
         this.sunCore.scale.setScalar(pulse);
         
-        // Rotate sun inner structure
-        this.sunInner.rotation.x += 0.01;
-        this.sunInner.rotation.y += 0.015;
+        // Brighten sun when hovered
+        this.sunCore.material.opacity = sunHovered ? 0.95 : 0.7;
         
-        // Animate corona rays
+        // Rotate sun inner structure - slower when hovered
+        const sunRotationSpeed = sunHovered ? 0.003 : 0.01;
+        this.sunInner.rotation.x += sunRotationSpeed;
+        this.sunInner.rotation.y += sunRotationSpeed * 1.5;
+        
+        // Animate corona rays - more visible when hovered
         this.coronaRays.forEach((ray, i) => {
             const rayPulse = 1 + Math.sin(this.time * 3 + i * 0.5) * 0.3;
             ray.scale.y = rayPulse;
-            ray.material.opacity = 0.2 + Math.sin(this.time * 2 + i) * 0.15;
+            const baseOpacity = sunHovered ? 0.35 : 0.2;
+            ray.material.opacity = baseOpacity + Math.sin(this.time * 2 + i) * 0.15;
         });
         
         // === ANIMATE PLANETS ===
         this.planets.forEach((planet, i) => {
             const data = planet.userData;
+            const isHovered = this.hoveredObject === i;
             
-            // Orbital motion
-            const speedBoost = data.speedBoost || 0;
-            data.angle += data.speed + speedBoost;
-            data.speedBoost = speedBoost * 0.95; // Decay boost
+            // Orbital motion - PAUSE when hovered
+            if (!isHovered) {
+                const speedBoost = data.speedBoost || 0;
+                data.angle += data.speed + speedBoost;
+                data.speedBoost = speedBoost * 0.95; // Decay boost
+            }
             
             planet.position.x = Math.cos(data.angle) * data.orbitRadius;
             planet.position.z = Math.sin(data.angle) * data.orbitRadius;
             planet.position.y = Math.sin(data.angle * 2) * 2; // Slight vertical bob
             
-            // Rotate planet
+            // Rotate planet - slower when hovered
+            const rotationSpeed = isHovered ? 0.005 : 0.02;
             if (data.wire) {
-                data.wire.rotation.x += 0.02;
-                data.wire.rotation.y += 0.03;
+                data.wire.rotation.x += rotationSpeed;
+                data.wire.rotation.y += rotationSpeed * 1.5;
             }
             if (data.ring) {
-                data.ring.rotation.z += 0.01;
+                data.ring.rotation.z += rotationSpeed * 0.5;
             }
             
-            // Planet pulse
-            const planetPulse = 1 + Math.sin(this.time * 1.5 + i * 2) * 0.1;
+            // Planet pulse - larger when hovered
+            const basePulse = isHovered ? 1.3 : 1;
+            const pulseAmount = isHovered ? 0.05 : 0.1;
+            const planetPulse = basePulse + Math.sin(this.time * 1.5 + i * 2) * pulseAmount;
             planet.children[0].scale.setScalar(planetPulse);
+            
+            // Brighten planet when hovered
+            if (planet.children[0].material) {
+                planet.children[0].material.opacity = isHovered ? 0.9 : 0.6;
+            }
         });
         
         // === ANIMATE PARTICLES ===
