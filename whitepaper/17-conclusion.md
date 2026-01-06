@@ -53,3 +53,4 @@ This is the **Panarchic Singularity**—the point at which humanity transcends t
 
 [← Previous: The Transition Strategy](16-transition-strategy.md) | [Table of Contents](00-front-matter.md) | [Appendix A: Smart Contracts →](appendix-a-smart-contracts.md)
 
+
