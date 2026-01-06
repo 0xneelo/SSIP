@@ -285,20 +285,22 @@ class SSIPBackground {
     }
     
     updateLabels() {
+        // Ensure matrices are up to date
+        this.solarSystem.updateMatrixWorld(true);
+        
         this.labels.forEach(label => {
             let position;
+            let screenYOffset = 0;
             
             if (label.target === 'sun') {
-                position = this.sun.position.clone();
-                // Apply solar system group transformations
-                position.applyMatrix4(this.solarSystem.matrixWorld);
+                position = new THREE.Vector3();
+                this.sun.getWorldPosition(position);
             } else {
                 const planet = this.planets[label.target];
                 if (planet) {
-                    position = planet.position.clone();
-                    position.applyMatrix4(this.solarSystem.matrixWorld);
-                    // Offset label below planet
-                    position.y -= 3;
+                    position = new THREE.Vector3();
+                    planet.getWorldPosition(position);
+                    screenYOffset = 25; // Offset label below planet in screen space
                 }
             }
             
@@ -307,7 +309,7 @@ class SSIPBackground {
                 position.project(this.camera);
                 
                 const x = (position.x * 0.5 + 0.5) * this.width;
-                const y = (-position.y * 0.5 + 0.5) * this.height;
+                const y = (-position.y * 0.5 + 0.5) * this.height + screenYOffset;
                 
                 // Only show label if it's in front of camera
                 if (position.z < 1) {
