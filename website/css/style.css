@@ -91,6 +91,21 @@ img {
     height: auto;
 }
 
+/* Three.js Canvas Background */
+#hero-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+#hero-canvas canvas {
+    display: block;
+}
+
 /* Ambient Background */
 .ambient-bg {
     position: fixed;
@@ -101,6 +116,7 @@ img {
     pointer-events: none;
     z-index: 0;
     overflow: hidden;
+    opacity: 0.5;
 }
 
 .gradient-orb {
