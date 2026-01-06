@@ -8,14 +8,24 @@ class SSIPBackground {
         this.container = document.getElementById('hero-canvas');
         if (!this.container) return;
         
+        // Get hero section for bounds
+        this.heroSection = this.container.closest('.hero') || this.container.parentElement;
+        
         this.mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
-        this.windowHalf = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        this.updateDimensions();
         
         this.init();
         this.createParticles();
         this.createConnections();
         this.animate();
         this.addEventListeners();
+    }
+    
+    updateDimensions() {
+        const rect = this.heroSection.getBoundingClientRect();
+        this.width = rect.width;
+        this.height = rect.height;
+        this.containerHalf = { x: this.width / 2, y: this.height / 2 };
     }
     
     init() {
@@ -25,7 +35,7 @@ class SSIPBackground {
         // Camera
         this.camera = new THREE.PerspectiveCamera(
             75,
-            window.innerWidth / window.innerHeight,
+            this.width / this.height,
             0.1,
             1000
         );
@@ -36,7 +46,7 @@ class SSIPBackground {
             antialias: true, 
             alpha: true 
         });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(this.width, this.height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.setClearColor(0x000000, 0);
         this.container.appendChild(this.renderer.domElement);
@@ -241,28 +251,43 @@ class SSIPBackground {
     }
     
     addEventListeners() {
-        // Mouse move
+        // Mouse move - calculate relative to hero section
         document.addEventListener('mousemove', (e) => {
-            this.mouse.targetX = (e.clientX - this.windowHalf.x) / this.windowHalf.x;
-            this.mouse.targetY = (e.clientY - this.windowHalf.y) / this.windowHalf.y;
+            const rect = this.heroSection.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Normalize to -1 to 1 range
+            this.mouse.targetX = (x / this.width) * 2 - 1;
+            this.mouse.targetY = (y / this.height) * 2 - 1;
+            
+            // Clamp values when mouse is outside hero
+            this.mouse.targetX = Math.max(-1, Math.min(1, this.mouse.targetX));
+            this.mouse.targetY = Math.max(-1, Math.min(1, this.mouse.targetY));
         });
         
         // Resize
         window.addEventListener('resize', () => {
-            this.windowHalf.x = window.innerWidth / 2;
-            this.windowHalf.y = window.innerHeight / 2;
+            this.updateDimensions();
             
-            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.aspect = this.width / this.height;
             this.camera.updateProjectionMatrix();
             
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setSize(this.width, this.height);
         });
         
         // Touch support for mobile
         document.addEventListener('touchmove', (e) => {
             if (e.touches.length > 0) {
-                this.mouse.targetX = (e.touches[0].clientX - this.windowHalf.x) / this.windowHalf.x;
-                this.mouse.targetY = (e.touches[0].clientY - this.windowHalf.y) / this.windowHalf.y;
+                const rect = this.heroSection.getBoundingClientRect();
+                const x = e.touches[0].clientX - rect.left;
+                const y = e.touches[0].clientY - rect.top;
+                
+                this.mouse.targetX = (x / this.width) * 2 - 1;
+                this.mouse.targetY = (y / this.height) * 2 - 1;
+                
+                this.mouse.targetX = Math.max(-1, Math.min(1, this.mouse.targetX));
+                this.mouse.targetY = Math.max(-1, Math.min(1, this.mouse.targetY));
             }
         });
     }
