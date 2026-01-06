@@ -472,18 +472,48 @@ class SSIPBackground {
         };
         this.clickWaves.push(wave);
         
-        // Visual ripple
-        const rippleGeo = new THREE.RingGeometry(0.1, 0.5, 32);
-        const rippleMat = new THREE.MeshBasicMaterial({
-            color: 0xfbbf24,
-            transparent: true,
-            opacity: 0.9,
-            side: THREE.DoubleSide
+        // Create geometric explosion group
+        const geoGroup = new THREE.Group();
+        geoGroup.position.set(wave.x, wave.y, wave.z);
+        wave.shapes = [];
+        
+        // Geometry types: triangle, square, hexagon, octagon
+        const geometries = [
+            new THREE.RingGeometry(0.8, 1.0, 3),   // Triangle
+            new THREE.RingGeometry(1.0, 1.2, 4),   // Square
+            new THREE.RingGeometry(0.6, 0.8, 6),   // Hexagon
+            new THREE.RingGeometry(1.2, 1.4, 8),   // Octagon
+            new THREE.RingGeometry(0.5, 0.7, 3),   // Small triangle
+            new THREE.RingGeometry(0.9, 1.1, 4),   // Another square
+        ];
+        
+        const colors = [0xf59e0b, 0xfbbf24, 0xfcd34d, 0xfef3c7];
+        
+        geometries.forEach((geo, i) => {
+            const mat = new THREE.MeshBasicMaterial({
+                color: colors[i % colors.length],
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide
+            });
+            const shape = new THREE.Mesh(geo, mat);
+            
+            // Random rotation and direction
+            shape.rotation.z = Math.random() * Math.PI * 2;
+            shape.userData = {
+                rotationSpeed: (Math.random() - 0.5) * 0.15,
+                expandSpeed: 0.8 + Math.random() * 0.6,
+                directionX: (Math.random() - 0.5) * 0.5,
+                directionY: (Math.random() - 0.5) * 0.5,
+                delay: i * 0.02 // Stagger appearance
+            };
+            
+            wave.shapes.push(shape);
+            geoGroup.add(shape);
         });
-        const ripple = new THREE.Mesh(rippleGeo, rippleMat);
-        ripple.position.set(wave.x, wave.y, wave.z);
-        this.scene.add(ripple);
-        wave.ripple = ripple;
+        
+        this.scene.add(geoGroup);
+        wave.geoGroup = geoGroup;
         
         // Pulse the sun on click
         this.sunPulse = 1.5;
@@ -493,11 +523,30 @@ class SSIPBackground {
         for (let i = this.clickWaves.length - 1; i >= 0; i--) {
             const wave = this.clickWaves[i];
             wave.radius += wave.speed;
-            wave.life -= 0.015;
+            wave.life -= 0.018;
             
-            if (wave.ripple) {
-                wave.ripple.scale.setScalar(wave.radius);
-                wave.ripple.material.opacity = wave.life * 0.9;
+            // Animate each geometric shape
+            if (wave.shapes) {
+                wave.shapes.forEach((shape, idx) => {
+                    const data = shape.userData;
+                    
+                    // Delayed start
+                    if (wave.life > 1 - data.delay) return;
+                    
+                    // Expand outward
+                    const scale = (1 - wave.life) * 8 * data.expandSpeed;
+                    shape.scale.setScalar(scale);
+                    
+                    // Drift in random direction
+                    shape.position.x += data.directionX;
+                    shape.position.y += data.directionY;
+                    
+                    // Rotate
+                    shape.rotation.z += data.rotationSpeed;
+                    
+                    // Fade out
+                    shape.material.opacity = wave.life * 0.8;
+                });
             }
             
             // Push particles
@@ -526,10 +575,13 @@ class SSIPBackground {
             });
             
             if (wave.life <= 0) {
-                if (wave.ripple) {
-                    this.scene.remove(wave.ripple);
-                    wave.ripple.geometry.dispose();
-                    wave.ripple.material.dispose();
+                // Clean up geometric shapes
+                if (wave.geoGroup) {
+                    wave.shapes.forEach(shape => {
+                        shape.geometry.dispose();
+                        shape.material.dispose();
+                    });
+                    this.scene.remove(wave.geoGroup);
                 }
                 this.clickWaves.splice(i, 1);
             }
