@@ -199,7 +199,7 @@ class SSIPBackground {
     createLabels() {
         // Create HTML labels for sun and planets
         const labelData = [
-            { name: 'SSIP', target: 'sun', color: '#f59e0b', size: '14px', fontWeight: '700' },
+            { name: 'SSIP', target: 'sun', color: '#ffffff', size: '18px', fontWeight: '800', isSun: true },
             { name: 'PRG', target: 0, color: '#f59e0b', size: '11px', fontWeight: '600' },
             { name: 'SYMMIO', target: 1, color: '#fbbf24', size: '11px', fontWeight: '600' },
             { name: 'Futarchy', target: 2, color: '#fcd34d', size: '11px', fontWeight: '600' }
@@ -220,18 +220,39 @@ class SSIPBackground {
         labelData.forEach(data => {
             const label = document.createElement('div');
             label.textContent = data.name;
-            label.style.cssText = `
-                position: absolute;
-                color: ${data.color};
-                font-family: 'JetBrains Mono', monospace;
-                font-size: ${data.size};
-                font-weight: ${data.fontWeight};
-                text-shadow: 0 0 10px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6);
-                white-space: nowrap;
-                transform: translate(-50%, -50%);
-                opacity: 0.9;
-                letter-spacing: 0.05em;
-            `;
+            
+            if (data.isSun) {
+                // Special styling for SSIP - dark pill background for contrast
+                label.style.cssText = `
+                    position: absolute;
+                    color: ${data.color};
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: ${data.size};
+                    font-weight: ${data.fontWeight};
+                    white-space: nowrap;
+                    transform: translate(-50%, -50%);
+                    letter-spacing: 0.15em;
+                    background: rgba(0, 0, 0, 0.7);
+                    padding: 6px 14px;
+                    border-radius: 20px;
+                    border: 1px solid rgba(245, 158, 11, 0.5);
+                    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 0, 0, 0.5);
+                    text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+                `;
+            } else {
+                label.style.cssText = `
+                    position: absolute;
+                    color: ${data.color};
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: ${data.size};
+                    font-weight: ${data.fontWeight};
+                    text-shadow: 0 0 10px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6);
+                    white-space: nowrap;
+                    transform: translate(-50%, -50%);
+                    opacity: 0.9;
+                    letter-spacing: 0.05em;
+                `;
+            }
             this.labelContainer.appendChild(label);
             this.labels.push({ element: label, target: data.target });
         });
