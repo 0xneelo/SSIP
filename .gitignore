@@ -1,0 +1,41 @@
+# Oliver Janich copyrighted materials
+# "Sicher ohne Staat: Wie eine natürliche Rechtsordnung ohne Gewaltmonopol funktioniert"
+# These files contain translations/excerpts from the copyrighted book
+# See Sources/SicherOhneStaat_Summary.md for a detailed summary of key concepts
+
+Sources/SicherOhneStaat_german/
+Sources/SicherOhneStaat_english/
+Sources/sicherOhneStaat_*.txt
+Sources/sicherOhneStaat_german*.md
+Sources/SicherOhneStaat_English*.md
+
+# Keep the summary (not copyrighted)
+!Sources/SicherOhneStaat_Summary.md
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
