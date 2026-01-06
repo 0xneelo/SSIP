@@ -100,7 +100,7 @@ img {
     height: 100%;
     z-index: 1;
     pointer-events: auto;
-    overflow: hidden;
+    overflow: visible;
 }
 
 #hero-canvas canvas {

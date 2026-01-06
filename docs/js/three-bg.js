@@ -11,9 +11,11 @@ class SSIPBackground {
         this.heroSection = this.container.closest('.hero') || this.container.parentElement;
         
         this.mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+        this.mouseScreen = { x: 0, y: 0 }; // For raycasting
         this.clickWaves = [];
         this.time = 0;
         this.labels = [];
+        this.hoveredObject = null;
         this.updateDimensions();
         
         this.init();
@@ -21,6 +23,7 @@ class SSIPBackground {
         this.createParticles();
         this.createOrbits();
         this.createLabels();
+        this.createTooltip();
         this.animate();
         this.addEventListeners();
     }
@@ -58,6 +61,10 @@ class SSIPBackground {
         this.scene.add(this.solarSystem);
         this.scene.add(this.particleGroup);
         this.scene.add(this.orbitGroup);
+        
+        // Raycaster for hover detection
+        this.raycaster = new THREE.Raycaster();
+        this.raycaster.params.Sphere = { threshold: 2 }; // Increase detection radius
     }
     
     createSolarSystem() {
@@ -276,6 +283,130 @@ class SSIPBackground {
                 }
             }
         });
+    }
+    
+    createTooltip() {
+        this.tooltip = document.createElement('div');
+        this.tooltip.style.cssText = `
+            position: absolute;
+            background: rgba(10, 10, 11, 0.95);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #fafafa;
+            font-family: 'Manrope', sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            max-width: 280px;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transform: translate(-50%, -100%) translateY(-15px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(245, 158, 11, 0.1);
+        `;
+        this.container.appendChild(this.tooltip);
+        
+        // Tooltip content for each object
+        this.tooltipData = {
+            'sun': {
+                title: 'SSIP',
+                subtitle: 'Symmio Sovereign Intent Protocol',
+                description: 'The core protocol fusing anarcho-capitalism, bilateral settlement, and prediction market governance into a unified system.'
+            },
+            0: {
+                title: 'PRG',
+                subtitle: 'Privatrechtsgesellschaft',
+                description: 'Oliver Janich\'s Private Law Society — the philosophical foundation based on voluntary contracts and the Non-Aggression Principle.'
+            },
+            1: {
+                title: 'SYMMIO',
+                subtitle: 'Bilateral Settlement Protocol',
+                description: 'Technical infrastructure providing bilateral isolation, CVA collateral management, and solver competition mechanisms.'
+            },
+            2: {
+                title: 'Futarchy',
+                subtitle: 'Prediction Market Governance',
+                description: 'Robin Hanson\'s governance model — "Vote on values, bet on beliefs" — replacing democracy with outcome-based markets.'
+            }
+        };
+    }
+    
+    showTooltip(key, screenX, screenY) {
+        const data = this.tooltipData[key];
+        if (!data) return;
+        
+        this.tooltip.innerHTML = `
+            <div style="color: #f59e0b; font-weight: 700; font-size: 14px; margin-bottom: 2px;">${data.title}</div>
+            <div style="color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">${data.subtitle}</div>
+            <div style="color: #d4d4d8;">${data.description}</div>
+        `;
+        
+        this.tooltip.style.left = `${screenX}px`;
+        this.tooltip.style.top = `${screenY}px`;
+        this.tooltip.style.opacity = '1';
+        this.tooltip.style.transform = 'translate(-50%, -100%) translateY(-20px)';
+    }
+    
+    hideTooltip() {
+        this.tooltip.style.opacity = '0';
+        this.tooltip.style.transform = 'translate(-50%, -100%) translateY(-15px)';
+    }
+    
+    checkHover() {
+        // Create mouse vector for raycasting
+        const mouse = new THREE.Vector2(this.mouseScreen.x, this.mouseScreen.y);
+        this.raycaster.setFromCamera(mouse, this.camera);
+        
+        // Get all interactive objects (sun core + planet cores)
+        const interactiveObjects = [this.sunCore];
+        this.planets.forEach(planet => {
+            // Get the first child (the core sphere)
+            if (planet.children[0]) {
+                interactiveObjects.push(planet.children[0]);
+            }
+        });
+        
+        const intersects = this.raycaster.intersectObjects(interactiveObjects, false);
+        
+        if (intersects.length > 0) {
+            const hitObject = intersects[0].object;
+            
+            // Determine which object was hit
+            let key = null;
+            let targetObject = null;
+            
+            if (hitObject === this.sunCore) {
+                key = 'sun';
+                targetObject = this.sun;
+            } else {
+                this.planets.forEach((planet, index) => {
+                    if (planet.children[0] === hitObject) {
+                        key = index;
+                        targetObject = planet;
+                    }
+                });
+            }
+            
+            if (key !== null && key !== this.hoveredObject) {
+                this.hoveredObject = key;
+                
+                // Get screen position for tooltip
+                const position = targetObject.position.clone();
+                position.applyMatrix4(this.solarSystem.matrixWorld);
+                position.project(this.camera);
+                
+                const screenX = (position.x * 0.5 + 0.5) * this.width;
+                const screenY = (-position.y * 0.5 + 0.5) * this.height;
+                
+                this.showTooltip(key, screenX, screenY);
+            }
+        } else {
+            if (this.hoveredObject !== null) {
+                this.hoveredObject = null;
+                this.hideTooltip();
+            }
+        }
     }
     
     createParticles() {
@@ -508,6 +639,9 @@ class SSIPBackground {
         // Update label positions
         this.updateLabels();
         
+        // Check for hover
+        this.checkHover();
+        
         this.renderer.render(this.scene, this.camera);
     }
     
@@ -522,6 +656,10 @@ class SSIPBackground {
             
             this.mouse.targetX = Math.max(-1, Math.min(1, this.mouse.targetX));
             this.mouse.targetY = Math.max(-1, Math.min(1, this.mouse.targetY));
+            
+            // Store normalized coordinates for raycasting
+            this.mouseScreen.x = (x / this.width) * 2 - 1;
+            this.mouseScreen.y = -(y / this.height) * 2 + 1;
         });
         
         // Click creates explosion + sun pulse
