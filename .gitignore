@@ -3,11 +3,14 @@
 # These files contain translations/excerpts from the copyrighted book
 # See Sources/SicherOhneStaat_Summary.md for a detailed summary of key concepts
 
+# All Janich-related folders and files
+Sources/SecureWithoutState_english/
 Sources/SicherOhneStaat_german/
 Sources/SicherOhneStaat_english/
-Sources/sicherOhneStaat_*.txt
-Sources/sicherOhneStaat_german*.md
-Sources/SicherOhneStaat_English*.md
+Sources/SicherOhneStaat_source/
+Sources/sicherOhneStaat*.txt
+Sources/sicherOhneStaat*.md
+Sources/SicherOhneStaat*.pdf
 
 # Keep the summary (not copyrighted)
 !Sources/SicherOhneStaat_Summary.md
@@ -38,4 +41,3 @@ npm-debug.log
 dist/
 build/
 *.egg-info/
-
