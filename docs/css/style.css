@@ -98,8 +98,8 @@ img {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 0;
-    pointer-events: none;
+    z-index: 1;
+    pointer-events: auto;
     overflow: hidden;
 }
 
@@ -189,10 +189,9 @@ img {
 }
 
 .nav-container {
-    width: 100%;
-    margin: 0;
-    padding: 0 var(--space-lg);
-    padding-left: var(--space-md);
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 var(--space-xl);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -261,6 +260,7 @@ img {
 .hero-visual {
     position: relative;
     z-index: 2;
+    pointer-events: auto;
 }
 
 .hero-badge {
@@ -1079,12 +1079,11 @@ img {
     position: fixed;
     left: 0;
     top: 80px;
-    width: 240px;
+    width: 280px;
     height: calc(100vh - 80px);
     background: var(--bg-secondary);
     border-right: 1px solid var(--border-subtle);
-    padding: var(--space-lg);
-    padding-left: var(--space-md);
+    padding: var(--space-xl);
     overflow-y: auto;
     z-index: 100;
 }
@@ -1125,11 +1124,9 @@ img {
 }
 
 .whitepaper-content {
-    margin-left: 240px;
-    padding: var(--space-2xl) var(--space-3xl);
-    padding-right: var(--space-xl);
-    max-width: none;
-    width: calc(100% - 240px);
+    margin-left: 280px;
+    padding: var(--space-3xl);
+    max-width: 900px;
 }
 
 .whitepaper-content h1 {
@@ -1245,8 +1242,8 @@ img {
     
     .whitepaper-content {
         margin-left: 0;
-        padding: var(--space-lg);
-        width: 100%;
+        padding: var(--space-xl);
     }
 }
+
 

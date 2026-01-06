@@ -1,6 +1,6 @@
 /**
  * SSIP Three.js Background Effect
- * Interactive particle network that responds to mouse movement
+ * Dynamic interactive particle network with mouse movement and click reactions
  */
 
 class SSIPBackground {
@@ -12,6 +12,8 @@ class SSIPBackground {
         this.heroSection = this.container.closest('.hero') || this.container.parentElement;
         
         this.mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+        this.clickWaves = [];
+        this.time = 0;
         this.updateDimensions();
         
         this.init();
@@ -23,8 +25,8 @@ class SSIPBackground {
     
     updateDimensions() {
         const rect = this.heroSection.getBoundingClientRect();
-        this.width = rect.width;
-        this.height = rect.height;
+        this.width = rect.width || window.innerWidth;
+        this.height = rect.height || window.innerHeight;
         this.containerHalf = { x: this.width / 2, y: this.height / 2 };
     }
     
@@ -60,78 +62,113 @@ class SSIPBackground {
     
     createParticles() {
         this.particles = [];
-        this.particleCount = 80;
-        
-        // Particle geometry and material
-        const geometry = new THREE.SphereGeometry(0.15, 16, 16);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0xf59e0b,
-            transparent: true,
-            opacity: 0.8
-        });
-        
-        // Glow material for larger particles
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0xfbbf24,
-            transparent: true,
-            opacity: 0.6
-        });
+        this.particleCount = 120; // More particles
         
         for (let i = 0; i < this.particleCount; i++) {
-            const isLarge = Math.random() > 0.85;
-            const size = isLarge ? 0.3 : 0.1 + Math.random() * 0.15;
-            const particleGeometry = new THREE.SphereGeometry(size, 16, 16);
-            const particle = new THREE.Mesh(
-                particleGeometry, 
-                isLarge ? glowMaterial.clone() : material.clone()
-            );
+            const isLarge = Math.random() > 0.8;
+            const isMedium = !isLarge && Math.random() > 0.6;
+            const size = isLarge ? 0.4 : (isMedium ? 0.25 : 0.1 + Math.random() * 0.1);
             
-            // Random position in a sphere
-            const radius = 30 + Math.random() * 20;
+            const particleGeometry = new THREE.SphereGeometry(size, 12, 12);
+            
+            // Varied colors - amber spectrum
+            const hue = 0.08 + Math.random() * 0.05; // Orange to yellow
+            const color = new THREE.Color().setHSL(hue, 1, isLarge ? 0.6 : 0.5);
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: isLarge ? 0.9 : (isMedium ? 0.7 : 0.5)
+            });
+            
+            const particle = new THREE.Mesh(particleGeometry, material);
+            
+            // Random position in a wider sphere
+            const radius = 25 + Math.random() * 30;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             
             particle.position.x = radius * Math.sin(phi) * Math.cos(theta);
             particle.position.y = radius * Math.sin(phi) * Math.sin(theta);
-            particle.position.z = radius * Math.cos(phi) - 20;
+            particle.position.z = radius * Math.cos(phi) - 15;
             
-            // Store original position and velocity
+            // Store properties for animation
             particle.userData = {
                 originalX: particle.position.x,
                 originalY: particle.position.y,
                 originalZ: particle.position.z,
-                velocityX: (Math.random() - 0.5) * 0.02,
-                velocityY: (Math.random() - 0.5) * 0.02,
-                velocityZ: (Math.random() - 0.5) * 0.01,
-                isLarge: isLarge
+                velocityX: (Math.random() - 0.5) * 0.15, // Faster base velocity
+                velocityY: (Math.random() - 0.5) * 0.15,
+                velocityZ: (Math.random() - 0.5) * 0.08,
+                phase: Math.random() * Math.PI * 2,
+                speed: 0.5 + Math.random() * 1.5, // Variable speeds
+                orbitRadius: 2 + Math.random() * 5,
+                orbitSpeed: 0.02 + Math.random() * 0.04,
+                isLarge: isLarge,
+                isMedium: isMedium,
+                pulseSpeed: 2 + Math.random() * 3,
+                originalOpacity: material.opacity
             };
             
             this.particles.push(particle);
             this.particleGroup.add(particle);
         }
         
-        // Add central node (SSIP core)
-        const coreGeometry = new THREE.IcosahedronGeometry(1.5, 1);
-        const coreMaterial = new THREE.MeshBasicMaterial({
+        // Central rotating structure
+        this.createCentralStructure();
+    }
+    
+    createCentralStructure() {
+        // Outer wireframe icosahedron
+        const outerGeometry = new THREE.IcosahedronGeometry(2.5, 1);
+        const outerMaterial = new THREE.MeshBasicMaterial({
             color: 0xf59e0b,
             wireframe: true,
             transparent: true,
-            opacity: 0.8
-        });
-        this.coreNode = new THREE.Mesh(coreGeometry, coreMaterial);
-        this.coreNode.position.z = -10;
-        this.scene.add(this.coreNode);
-        
-        // Inner core
-        const innerCoreGeometry = new THREE.IcosahedronGeometry(0.8, 0);
-        const innerCoreMaterial = new THREE.MeshBasicMaterial({
-            color: 0xfbbf24,
-            transparent: true,
             opacity: 0.6
         });
-        this.innerCore = new THREE.Mesh(innerCoreGeometry, innerCoreMaterial);
-        this.innerCore.position.z = -10;
+        this.outerCore = new THREE.Mesh(outerGeometry, outerMaterial);
+        this.outerCore.position.z = -5;
+        this.scene.add(this.outerCore);
+        
+        // Middle ring
+        const ringGeometry = new THREE.TorusGeometry(1.8, 0.05, 16, 50);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+            color: 0xfbbf24,
+            transparent: true,
+            opacity: 0.8
+        });
+        this.ring1 = new THREE.Mesh(ringGeometry, ringMaterial);
+        this.ring1.position.z = -5;
+        this.scene.add(this.ring1);
+        
+        // Second ring (perpendicular)
+        this.ring2 = new THREE.Mesh(ringGeometry.clone(), ringMaterial.clone());
+        this.ring2.position.z = -5;
+        this.ring2.rotation.x = Math.PI / 2;
+        this.scene.add(this.ring2);
+        
+        // Inner core
+        const innerGeometry = new THREE.OctahedronGeometry(0.8, 0);
+        const innerMaterial = new THREE.MeshBasicMaterial({
+            color: 0xfcd34d,
+            transparent: true,
+            opacity: 0.9
+        });
+        this.innerCore = new THREE.Mesh(innerGeometry, innerMaterial);
+        this.innerCore.position.z = -5;
         this.scene.add(this.innerCore);
+        
+        // Glowing center point
+        const glowGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.8
+        });
+        this.glowCenter = new THREE.Mesh(glowGeometry, glowMaterial);
+        this.glowCenter.position.z = -5;
+        this.scene.add(this.glowCenter);
     }
     
     createConnections() {
@@ -139,7 +176,7 @@ class SSIPBackground {
         this.connectionMaterial = new THREE.LineBasicMaterial({
             color: 0xf59e0b,
             transparent: true,
-            opacity: 0.15
+            opacity: 0.2
         });
     }
     
@@ -151,22 +188,25 @@ class SSIPBackground {
         });
         this.connections = [];
         
-        // Create new connections between nearby particles
-        const maxDistance = 15;
+        const maxDistance = 18;
         
         for (let i = 0; i < this.particles.length; i++) {
-            for (let j = i + 1; j < this.particles.length; j++) {
+            // Limit connections per particle for performance
+            let connectionCount = 0;
+            const maxConnectionsPerParticle = 3;
+            
+            for (let j = i + 1; j < this.particles.length && connectionCount < maxConnectionsPerParticle; j++) {
                 const p1 = this.particles[i];
                 const p2 = this.particles[j];
                 const distance = p1.position.distanceTo(p2.position);
                 
                 if (distance < maxDistance) {
                     const geometry = new THREE.BufferGeometry().setFromPoints([
-                        p1.position,
-                        p2.position
+                        p1.position.clone(),
+                        p2.position.clone()
                     ]);
                     
-                    const opacity = 0.15 * (1 - distance / maxDistance);
+                    const opacity = 0.25 * (1 - distance / maxDistance);
                     const material = new THREE.LineBasicMaterial({
                         color: 0xf59e0b,
                         transparent: true,
@@ -176,24 +216,27 @@ class SSIPBackground {
                     const line = new THREE.Line(geometry, material);
                     this.connections.push(line);
                     this.connectionGroup.add(line);
+                    connectionCount++;
                 }
             }
             
-            // Connect large particles to core
-            if (this.particles[i].userData.isLarge) {
+            // Connect larger particles to core with brighter lines
+            if (this.particles[i].userData.isLarge || this.particles[i].userData.isMedium) {
                 const p = this.particles[i];
-                const distance = p.position.distanceTo(this.coreNode.position);
+                const corePos = this.outerCore.position;
+                const distance = p.position.distanceTo(corePos);
                 
-                if (distance < 35) {
+                if (distance < 40) {
                     const geometry = new THREE.BufferGeometry().setFromPoints([
-                        p.position,
-                        this.coreNode.position
+                        p.position.clone(),
+                        corePos.clone()
                     ]);
                     
+                    const opacity = this.particles[i].userData.isLarge ? 0.3 : 0.15;
                     const material = new THREE.LineBasicMaterial({
                         color: 0xfbbf24,
                         transparent: true,
-                        opacity: 0.2
+                        opacity: opacity * (1 - distance / 40)
                     });
                     
                     const line = new THREE.Line(geometry, material);
@@ -204,46 +247,156 @@ class SSIPBackground {
         }
     }
     
+    // Click wave explosion effect
+    createClickWave(x, y) {
+        const wave = {
+            x: x * 30, // Convert normalized coords to scene coords
+            y: -y * 20,
+            z: 0,
+            radius: 0,
+            maxRadius: 60,
+            speed: 2,
+            strength: 15,
+            life: 1
+        };
+        this.clickWaves.push(wave);
+        
+        // Create visual ripple
+        const rippleGeometry = new THREE.RingGeometry(0.1, 0.3, 32);
+        const rippleMaterial = new THREE.MeshBasicMaterial({
+            color: 0xfbbf24,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide
+        });
+        const ripple = new THREE.Mesh(rippleGeometry, rippleMaterial);
+        ripple.position.set(wave.x, wave.y, wave.z);
+        ripple.userData = { wave: wave };
+        this.scene.add(ripple);
+        wave.ripple = ripple;
+    }
+    
+    updateClickWaves() {
+        for (let i = this.clickWaves.length - 1; i >= 0; i--) {
+            const wave = this.clickWaves[i];
+            wave.radius += wave.speed;
+            wave.life -= 0.02;
+            
+            // Update ripple visual
+            if (wave.ripple) {
+                wave.ripple.scale.setScalar(wave.radius);
+                wave.ripple.material.opacity = wave.life * 0.8;
+            }
+            
+            // Affect particles
+            this.particles.forEach(particle => {
+                const dx = particle.position.x - wave.x;
+                const dy = particle.position.y - wave.y;
+                const dz = particle.position.z - wave.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                
+                // Particles near the wave edge get pushed
+                const waveDist = Math.abs(dist - wave.radius);
+                if (waveDist < 8) {
+                    const force = (1 - waveDist / 8) * wave.strength * wave.life;
+                    const angle = Math.atan2(dy, dx);
+                    particle.position.x += Math.cos(angle) * force * 0.3;
+                    particle.position.y += Math.sin(angle) * force * 0.3;
+                    particle.position.z += (dz / (dist || 1)) * force * 0.1;
+                }
+            });
+            
+            // Remove expired waves
+            if (wave.life <= 0) {
+                if (wave.ripple) {
+                    this.scene.remove(wave.ripple);
+                    wave.ripple.geometry.dispose();
+                    wave.ripple.material.dispose();
+                }
+                this.clickWaves.splice(i, 1);
+            }
+        }
+    }
+    
     animate() {
         requestAnimationFrame(() => this.animate());
         
+        this.time += 0.016; // ~60fps time increment
+        
         // Smooth mouse follow
-        this.mouse.x += (this.mouse.targetX - this.mouse.x) * 0.05;
-        this.mouse.y += (this.mouse.targetY - this.mouse.y) * 0.05;
+        this.mouse.x += (this.mouse.targetX - this.mouse.x) * 0.08;
+        this.mouse.y += (this.mouse.targetY - this.mouse.y) * 0.08;
         
-        // Rotate particle group based on mouse
-        this.particleGroup.rotation.y = this.mouse.x * 0.3;
-        this.particleGroup.rotation.x = this.mouse.y * 0.2;
+        // Rotate particle group based on mouse (more responsive)
+        this.particleGroup.rotation.y = this.mouse.x * 0.5;
+        this.particleGroup.rotation.x = this.mouse.y * 0.3;
         
-        // Animate core
-        this.coreNode.rotation.x += 0.003;
-        this.coreNode.rotation.y += 0.005;
-        this.innerCore.rotation.x -= 0.005;
-        this.innerCore.rotation.y -= 0.003;
+        // Animate central structure (faster, more dynamic)
+        this.outerCore.rotation.x += 0.008;
+        this.outerCore.rotation.y += 0.012;
+        this.outerCore.rotation.z += 0.004;
         
-        // Move core slightly with mouse
-        this.coreNode.position.x = this.mouse.x * 5;
-        this.coreNode.position.y = -this.mouse.y * 5;
-        this.innerCore.position.x = this.mouse.x * 5;
-        this.innerCore.position.y = -this.mouse.y * 5;
+        this.ring1.rotation.z += 0.02;
+        this.ring2.rotation.y += 0.025;
         
-        // Animate particles
+        this.innerCore.rotation.x -= 0.015;
+        this.innerCore.rotation.y += 0.02;
+        this.innerCore.rotation.z -= 0.01;
+        
+        // Pulse the glow center
+        const glowPulse = 0.8 + Math.sin(this.time * 4) * 0.2;
+        this.glowCenter.scale.setScalar(glowPulse);
+        this.glowCenter.material.opacity = 0.6 + Math.sin(this.time * 3) * 0.3;
+        
+        // Move core with mouse (more movement)
+        const coreX = this.mouse.x * 8;
+        const coreY = -this.mouse.y * 6;
+        this.outerCore.position.x = coreX;
+        this.outerCore.position.y = coreY;
+        this.ring1.position.x = coreX;
+        this.ring1.position.y = coreY;
+        this.ring2.position.x = coreX;
+        this.ring2.position.y = coreY;
+        this.innerCore.position.x = coreX;
+        this.innerCore.position.y = coreY;
+        this.glowCenter.position.x = coreX;
+        this.glowCenter.position.y = coreY;
+        
+        // Animate particles with more dynamic movement
         this.particles.forEach((particle, i) => {
             const data = particle.userData;
             
-            // Gentle floating motion
-            particle.position.x = data.originalX + Math.sin(Date.now() * 0.001 + i) * 0.5;
-            particle.position.y = data.originalY + Math.cos(Date.now() * 0.001 + i) * 0.5;
+            // Orbital motion around original position
+            const orbitX = Math.cos(this.time * data.orbitSpeed + data.phase) * data.orbitRadius;
+            const orbitY = Math.sin(this.time * data.orbitSpeed + data.phase) * data.orbitRadius;
             
-            // Pulse effect for large particles
+            // Wave motion
+            const waveOffset = Math.sin(this.time * data.speed + i * 0.1) * 2;
+            
+            // Apply position with smooth return to orbit
+            particle.position.x += (data.originalX + orbitX - particle.position.x) * 0.02;
+            particle.position.y += (data.originalY + orbitY + waveOffset - particle.position.y) * 0.02;
+            particle.position.z += (data.originalZ - particle.position.z) * 0.01;
+            
+            // Pulse effect for all particles (stronger for larger ones)
             if (data.isLarge) {
-                const scale = 1 + Math.sin(Date.now() * 0.002 + i) * 0.2;
+                const scale = 1 + Math.sin(this.time * data.pulseSpeed) * 0.4;
                 particle.scale.setScalar(scale);
+                particle.material.opacity = data.originalOpacity + Math.sin(this.time * 2) * 0.2;
+            } else if (data.isMedium) {
+                const scale = 1 + Math.sin(this.time * data.pulseSpeed + i) * 0.25;
+                particle.scale.setScalar(scale);
+            } else {
+                // Subtle twinkle for small particles
+                particle.material.opacity = data.originalOpacity * (0.7 + Math.sin(this.time * data.pulseSpeed + i * 0.5) * 0.3);
             }
         });
         
-        // Update connections every few frames for performance
-        if (Math.floor(Date.now() / 100) % 3 === 0) {
+        // Update click wave effects
+        this.updateClickWaves();
+        
+        // Update connections more frequently for smoother look
+        if (Math.floor(this.time * 60) % 2 === 0) {
             this.updateConnections();
         }
         
@@ -264,6 +417,14 @@ class SSIPBackground {
             // Clamp values when mouse is outside hero
             this.mouse.targetX = Math.max(-1, Math.min(1, this.mouse.targetX));
             this.mouse.targetY = Math.max(-1, Math.min(1, this.mouse.targetY));
+        });
+        
+        // Mouse click - create explosion wave
+        this.heroSection.addEventListener('click', (e) => {
+            const rect = this.heroSection.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / this.width) * 2 - 1;
+            const y = ((e.clientY - rect.top) / this.height) * 2 - 1;
+            this.createClickWave(x, y);
         });
         
         // Resize
@@ -290,6 +451,16 @@ class SSIPBackground {
                 this.mouse.targetY = Math.max(-1, Math.min(1, this.mouse.targetY));
             }
         });
+        
+        // Touch tap - create explosion
+        this.heroSection.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                const rect = this.heroSection.getBoundingClientRect();
+                const x = ((e.touches[0].clientX - rect.left) / this.width) * 2 - 1;
+                const y = ((e.touches[0].clientY - rect.top) / this.height) * 2 - 1;
+                this.createClickWave(x, y);
+            }
+        });
     }
 }
 
@@ -297,4 +468,3 @@ class SSIPBackground {
 document.addEventListener('DOMContentLoaded', () => {
     new SSIPBackground();
 });
-
