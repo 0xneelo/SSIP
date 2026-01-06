@@ -13,12 +13,14 @@ class SSIPBackground {
         this.mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
         this.clickWaves = [];
         this.time = 0;
+        this.labels = [];
         this.updateDimensions();
         
         this.init();
         this.createSolarSystem();
         this.createParticles();
         this.createOrbits();
+        this.createLabels();
         this.animate();
         this.addEventListeners();
     }
@@ -46,9 +48,9 @@ class SSIPBackground {
         this.particleGroup = new THREE.Group();
         this.orbitGroup = new THREE.Group();
         
-        // Position solar system to the right side of the screen
-        const xOffset = 25; // Move right
-        const zOffset = -20; // Push back
+        // Position solar system to the far right side of the screen
+        const xOffset = 35; // Move more to the right
+        const zOffset = -10; // Closer for better visibility
         this.solarSystem.position.set(xOffset, 0, zOffset);
         this.orbitGroup.position.set(xOffset, 0, zOffset);
         this.particleGroup.position.set(xOffset, 0, zOffset);
@@ -175,7 +177,7 @@ class SSIPBackground {
     }
     
     createOrbits() {
-        // Create visible orbit paths - very subtle
+        // Create visible orbit paths - subtle but visible
         const orbitRadii = [18, 26, 34];
         const orbitColors = [0xf59e0b, 0xfbbf24, 0xfcd34d];
         
@@ -186,7 +188,7 @@ class SSIPBackground {
             const material = new THREE.LineBasicMaterial({
                 color: orbitColors[i],
                 transparent: true,
-                opacity: 0.08 // Very subtle
+                opacity: 0.12
             });
             const orbit = new THREE.Line(geometry, material);
             orbit.rotation.x = Math.PI / 2;
@@ -196,6 +198,84 @@ class SSIPBackground {
         // Orbit group tilts slightly for 3D effect
         this.orbitGroup.rotation.x = 0.4;
         this.solarSystem.rotation.x = 0.4;
+    }
+    
+    createLabels() {
+        // Create HTML labels for sun and planets
+        const labelData = [
+            { name: 'SSIP', target: 'sun', color: '#f59e0b', size: '14px', fontWeight: '700' },
+            { name: 'PRG', target: 0, color: '#f59e0b', size: '11px', fontWeight: '600' },
+            { name: 'SYMMIO', target: 1, color: '#fbbf24', size: '11px', fontWeight: '600' },
+            { name: 'Futarchy', target: 2, color: '#fcd34d', size: '11px', fontWeight: '600' }
+        ];
+        
+        this.labelContainer = document.createElement('div');
+        this.labelContainer.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        `;
+        this.container.appendChild(this.labelContainer);
+        
+        labelData.forEach(data => {
+            const label = document.createElement('div');
+            label.textContent = data.name;
+            label.style.cssText = `
+                position: absolute;
+                color: ${data.color};
+                font-family: 'JetBrains Mono', monospace;
+                font-size: ${data.size};
+                font-weight: ${data.fontWeight};
+                text-shadow: 0 0 10px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6);
+                white-space: nowrap;
+                transform: translate(-50%, -50%);
+                opacity: 0.9;
+                letter-spacing: 0.05em;
+            `;
+            this.labelContainer.appendChild(label);
+            this.labels.push({ element: label, target: data.target });
+        });
+    }
+    
+    updateLabels() {
+        this.labels.forEach(label => {
+            let position;
+            
+            if (label.target === 'sun') {
+                position = this.sun.position.clone();
+                // Apply solar system group transformations
+                position.applyMatrix4(this.solarSystem.matrixWorld);
+            } else {
+                const planet = this.planets[label.target];
+                if (planet) {
+                    position = planet.position.clone();
+                    position.applyMatrix4(this.solarSystem.matrixWorld);
+                    // Offset label below planet
+                    position.y -= 3;
+                }
+            }
+            
+            if (position) {
+                // Project 3D position to 2D screen coordinates
+                position.project(this.camera);
+                
+                const x = (position.x * 0.5 + 0.5) * this.width;
+                const y = (-position.y * 0.5 + 0.5) * this.height;
+                
+                // Only show label if it's in front of camera
+                if (position.z < 1) {
+                    label.element.style.left = `${x}px`;
+                    label.element.style.top = `${y}px`;
+                    label.element.style.display = 'block';
+                } else {
+                    label.element.style.display = 'none';
+                }
+            }
+        });
     }
     
     createParticles() {
@@ -424,6 +504,9 @@ class SSIPBackground {
         
         // Update click waves
         this.updateClickWaves();
+        
+        // Update label positions
+        this.updateLabels();
         
         this.renderer.render(this.scene, this.camera);
     }

@@ -245,12 +245,12 @@ img {
 .hero {
     min-height: 100vh;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: flex-start;
     align-items: center;
-    text-align: center;
+    text-align: left;
     padding: calc(80px + var(--space-4xl)) var(--space-xl) var(--space-4xl);
-    max-width: 1280px;
+    max-width: 1400px;
     margin: 0 auto;
     position: relative;
     z-index: 1;
@@ -261,20 +261,21 @@ img {
     position: relative;
     z-index: 2;
     pointer-events: auto;
-    max-width: 700px;
+    max-width: 600px;
+    padding-left: var(--space-xl);
 }
 
 .hero-subtitle {
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .hero-stats {
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .hero-actions {
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .hero-badge {
