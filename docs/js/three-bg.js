@@ -51,9 +51,9 @@ class SSIPBackground {
         this.particleGroup = new THREE.Group();
         this.orbitGroup = new THREE.Group();
         
-        // Position solar system to the far right side of the screen
-        const xOffset = 35; // Move more to the right
-        const zOffset = -10; // Closer for better visibility
+        // Position solar system to the right side but not cut off
+        const xOffset = 20; // Centered more on the right half
+        const zOffset = -5; // Closer for better visibility
         this.solarSystem.position.set(xOffset, 0, zOffset);
         this.orbitGroup.position.set(xOffset, 0, zOffset);
         this.particleGroup.position.set(xOffset, 0, zOffset);
@@ -125,13 +125,13 @@ class SSIPBackground {
         
         this.solarSystem.add(this.sun);
         
-        // === PLANETS === (smaller, more subtle)
+        // === PLANETS === (sized to fit screen)
         this.planets = [];
         
         const planetData = [
-            { name: 'Janich PRG', color: 0xf59e0b, orbitRadius: 18, speed: 0.006, size: 1.5, startAngle: 0 },
-            { name: 'SYMMIO', color: 0xfbbf24, orbitRadius: 26, speed: 0.009, size: 1.8, startAngle: Math.PI * 2/3 },
-            { name: 'Futarchy', color: 0xfcd34d, orbitRadius: 34, speed: 0.004, size: 1.4, startAngle: Math.PI * 4/3 }
+            { name: 'Janich PRG', color: 0xf59e0b, orbitRadius: 14, speed: 0.006, size: 1.4, startAngle: 0 },
+            { name: 'SYMMIO', color: 0xfbbf24, orbitRadius: 22, speed: 0.009, size: 1.6, startAngle: Math.PI * 2/3 },
+            { name: 'Futarchy', color: 0xfcd34d, orbitRadius: 30, speed: 0.004, size: 1.3, startAngle: Math.PI * 4/3 }
         ];
         
         planetData.forEach((data, index) => {
@@ -184,8 +184,8 @@ class SSIPBackground {
     }
     
     createOrbits() {
-        // Create visible orbit paths - subtle but visible
-        const orbitRadii = [18, 26, 34];
+        // Create visible orbit paths - sized to fit screen
+        const orbitRadii = [14, 22, 30];
         const orbitColors = [0xf59e0b, 0xfbbf24, 0xfcd34d];
         
         orbitRadii.forEach((radius, i) => {
@@ -435,11 +435,11 @@ class SSIPBackground {
             
             if (band === 0) {
                 // Inner particles around sun
-                radius = 6 + Math.random() * 6;
+                radius = 5 + Math.random() * 5;
                 orbitSpeed = 0.015 + Math.random() * 0.015;
             } else {
-                // Particles in orbital bands (updated radii)
-                const baseRadius = [18, 26, 34][band - 1];
+                // Particles in orbital bands (sized to fit screen)
+                const baseRadius = [14, 22, 30][band - 1];
                 radius = baseRadius - 2 + Math.random() * 4;
                 orbitSpeed = [0.006, 0.009, 0.004][band - 1] * (0.8 + Math.random() * 0.4);
             }
