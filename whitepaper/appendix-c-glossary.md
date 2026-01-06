@@ -6,6 +6,7 @@
 | **CVA** | Credit Valuation Adjustment; locked collateral guaranteeing performance |
 | **Futarchy** | Governance by prediction markets rather than voting |
 | **Intent** | Citizen's declaration of desired outcome (e.g., protection, dispute resolution) |
+| **Intent Aggregator** | Entity that bundles common protection needs into template policies, negotiating bulk rates with PSAs and Courts on behalf of subscribers |
 | **NAP** | Non-Aggression Principle; prohibition on initiated force |
 | **Outlaw** | Individual who has exited the contractual order via non-compliance or by choice |
 | **Panarchy** | Coexistence of multiple governance systems with free choice |

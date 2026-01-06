@@ -197,7 +197,196 @@ contract PrivateCourtRegistry {
 }
 ```
 
-## 6.3 Performance Metrics and Competition
+## 6.3 Intent Aggregators: The UX Layer
+
+**The Problem**: Expecting average citizens to manually create intents for every possible threat—theft, assault, property damage, medical emergencies, contract disputes, etc.—is impractical. Most people don't want to think about every edge case; they want comprehensive protection.
+
+**The Solution**: **Intent Aggregators** (also called **Intent Brokers**) are specialized entities that:
+1. Bundle common protection needs into **Template Policies**
+2. Negotiate bulk rates with PSAs and Courts on behalf of subscribers
+3. Continuously optimize coverage based on market data
+4. Compete with each other on bundle quality and price
+
+### 6.3.1 How Intent Aggregators Work
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     CITIZEN EXPERIENCE                          │
+│                                                                 │
+│   "I want comprehensive protection for my family"               │
+│                          │                                      │
+│                          ▼                                      │
+│   ┌─────────────────────────────────────────────┐              │
+│   │         INTENT AGGREGATOR MARKETPLACE        │              │
+│   │                                             │              │
+│   │  ◆ SafeHaven Bundle - $299/month            │              │
+│   │  ◆ Guardian Family Plan - $349/month        │              │
+│   │  ◆ Sovereign Shield Premium - $499/month    │              │
+│   │  ◆ Custom Builder - Variable                │              │
+│   └─────────────────────────────────────────────┘              │
+│                          │                                      │
+│                          ▼                                      │
+│   One-click subscription → All intents auto-created             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 6.3.2 Template Bundle Structure
+
+A typical **"Complete Life Protection"** bundle might include:
+
+| Category | Coverage | Sourced From |
+|----------|----------|--------------|
+| **Physical Security** | Home patrol, emergency response (<5 min), travel escort | PSA Network |
+| **Property Protection** | Theft, damage, fire - full replacement value | Insurance Solver |
+| **Personal Safety** | Assault, kidnapping - medical + restitution | PSA + Insurance |
+| **Legal Protection** | Contract disputes, defamation, fraud | Private Court Pool |
+| **Medical Emergency** | Accident response, hospital liaison | Medical PSA |
+| **Digital Security** | Identity theft, cyber attacks, data breach | Cyber PSA |
+| **Family Coverage** | Spouse + dependents included | All providers |
+
+### 6.3.3 Aggregator Smart Contract
+
+```solidity
+contract IntentAggregator {
+    
+    struct ProtectionBundle {
+        bytes32 bundleId;
+        string bundleName;
+        address aggregator;
+        uint256 monthlyPremium;
+        bytes32[] includedIntentTypes;
+        address[] preferredPSAs;
+        address[] preferredCourts;
+        uint256 totalCVABacking;
+        uint256 subscriberCount;
+    }
+    
+    struct Subscription {
+        address subscriber;
+        bytes32 bundleId;
+        uint256 startDate;
+        uint256 monthlyPayment;
+        bytes32[] activeIntents;  // Auto-generated intents
+        bool active;
+    }
+    
+    mapping(bytes32 => ProtectionBundle) public bundles;
+    mapping(address => Subscription) public subscriptions;
+    
+    // Aggregators register bundles they've negotiated
+    function registerBundle(
+        string calldata name,
+        bytes32[] calldata intentTypes,
+        address[] calldata psas,
+        address[] calldata courts,
+        uint256 premium
+    ) external returns (bytes32 bundleId) {
+        require(isLicensedAggregator(msg.sender), "Not licensed aggregator");
+        
+        bundleId = keccak256(abi.encodePacked(name, msg.sender, block.timestamp));
+        
+        bundles[bundleId] = ProtectionBundle({
+            bundleId: bundleId,
+            bundleName: name,
+            aggregator: msg.sender,
+            monthlyPremium: premium,
+            includedIntentTypes: intentTypes,
+            preferredPSAs: psas,
+            preferredCourts: courts,
+            totalCVABacking: calculateBundleCVA(psas, courts),
+            subscriberCount: 0
+        });
+        
+        emit BundleRegistered(bundleId, name, premium);
+    }
+    
+    // Citizens subscribe with ONE transaction
+    function subscribe(bytes32 bundleId) external payable {
+        ProtectionBundle storage bundle = bundles[bundleId];
+        require(msg.value >= bundle.monthlyPremium, "Insufficient payment");
+        
+        // Auto-generate all component intents
+        bytes32[] memory intents = new bytes32[](bundle.includedIntentTypes.length);
+        for (uint i = 0; i < bundle.includedIntentTypes.length; i++) {
+            intents[i] = createIntent(
+                msg.sender,
+                bundle.includedIntentTypes[i],
+                bundle.preferredPSAs,
+                bundle.preferredCourts
+            );
+        }
+        
+        subscriptions[msg.sender] = Subscription({
+            subscriber: msg.sender,
+            bundleId: bundleId,
+            startDate: block.timestamp,
+            monthlyPayment: bundle.monthlyPremium,
+            activeIntents: intents,
+            active: true
+        });
+        
+        bundle.subscriberCount++;
+        
+        // Distribute premium to providers
+        distributePremium(bundleId, msg.value);
+        
+        emit Subscribed(msg.sender, bundleId);
+    }
+    
+    // Aggregator earns commission for bundle curation
+    function distributePremium(bytes32 bundleId, uint256 amount) internal {
+        ProtectionBundle storage bundle = bundles[bundleId];
+        
+        uint256 aggregatorFee = (amount * 5) / 100;  // 5% commission
+        uint256 providerShare = amount - aggregatorFee;
+        
+        payable(bundle.aggregator).transfer(aggregatorFee);
+        distributeToProviders(bundle, providerShare);
+    }
+}
+```
+
+### 6.3.4 Aggregator Competition
+
+Intent Aggregators compete on:
+
+| Factor | How They Compete |
+|--------|------------------|
+| **Coverage Completeness** | More threats covered, fewer gaps |
+| **Price** | Bulk negotiation power with PSAs/Courts |
+| **Provider Quality** | Curating highest-rated PSAs and Arbiters |
+| **Claims Experience** | Faster, smoother claim resolution |
+| **Customization** | Easy add-ons and modifications |
+| **Transparency** | Clear breakdown of where premiums go |
+
+### 6.3.5 User Customization
+
+While bundles provide convenience, citizens can still:
+
+1. **Modify bundles** - Add/remove specific coverages
+2. **Override providers** - Swap out a PSA or Court they prefer
+3. **Create custom intents** - For unique needs not in any bundle
+4. **Layer multiple bundles** - Combine from different aggregators
+
+```
+EXAMPLE: Customized Subscription
+
+BASE: Guardian Family Plan ($349/month)
+  ├── Home Security: AlphaPSA ✓
+  ├── Legal: CommonLawDAO ✓
+  ├── Medical: MedResponse ✓
+  └── Cyber: [SWAP] → CryptoShield (user preference)
+
+ADD-ONS:
+  ├── High-Value Art Insurance: +$50/month
+  └── International Travel Protection: +$75/month
+
+TOTAL: $474/month
+```
+
+---
+
+## 6.4 Performance Metrics and Competition
 
 PSAs and Courts compete on distinct measurable metrics:
 
@@ -221,7 +410,7 @@ PSAs and Courts compete on distinct measurable metrics:
 | Precedent Consistency | Rulings align with stated framework | > 95% |
 | Cost Efficiency | Cost per case vs. state courts | < 20% |
 
-**6.3.1 Performance-Linked CVA**
+**6.4.1 Performance-Linked CVA**
 
 \[
 \text{Required CVA}_i = \text{Base CVA} \times \left(1 + \frac{\text{Risk Score}_i}{100}\right) \times \left(1 + \frac{100 - \text{Performance Score}_i}{50}\right)
@@ -229,11 +418,11 @@ PSAs and Courts compete on distinct measurable metrics:
 
 Poor performers must lock more collateral, creating economic pressure to improve or exit.
 
-## 6.4 Governance Validation: Performance Betting Markets
+## 6.5 Governance Validation: Performance Betting Markets
 
 Futarchy creates skin-in-the-game for performance claims:
 
-**6.4.1 PSA Performance Futures**
+**6.5.1 PSA Performance Futures**
 
 ```
 MARKET: AlphaSecurity_Q1_2026_CrimeRate
@@ -246,7 +435,7 @@ SETTLEMENT:
   - If crime rate >= 0.5%: NO pays 4.55 USDC
 ```
 
-**6.4.2 Private Court Performance Futures**
+**6.5.2 Private Court Performance Futures**
 
 ```
 MARKET: CommonLawDAO_Resolution_Speed_Q1_2026
