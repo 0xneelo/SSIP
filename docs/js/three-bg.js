@@ -222,7 +222,7 @@ class SSIPBackground {
             label.textContent = data.name;
             
             if (data.isSun) {
-                // Special styling for SSIP - dark pill background for contrast
+                // Special styling for SSIP - diamond logo shape background
                 label.style.cssText = `
                     position: absolute;
                     color: ${data.color};
@@ -232,13 +232,38 @@ class SSIPBackground {
                     white-space: nowrap;
                     transform: translate(-50%, -50%);
                     letter-spacing: 0.15em;
-                    background: rgba(0, 0, 0, 0.7);
-                    padding: 6px 14px;
-                    border-radius: 20px;
-                    border: 1px solid rgba(245, 158, 11, 0.5);
-                    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 0, 0, 0.5);
                     text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 70px;
+                    height: 70px;
                 `;
+                
+                // Create diamond backdrop matching logo
+                const diamond = document.createElement('div');
+                diamond.style.cssText = `
+                    position: absolute;
+                    width: 70px;
+                    height: 70px;
+                    background: rgba(10, 10, 11, 0.85);
+                    border: 2px solid #f59e0b;
+                    transform: rotate(45deg);
+                    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 158, 11, 0.3);
+                    z-index: -1;
+                `;
+                label.appendChild(diamond);
+                
+                // Re-add text on top (not rotated)
+                const textSpan = document.createElement('span');
+                textSpan.textContent = data.name;
+                textSpan.style.cssText = `
+                    position: relative;
+                    z-index: 1;
+                `;
+                label.textContent = '';
+                label.appendChild(diamond);
+                label.appendChild(textSpan);
             } else {
                 label.style.cssText = `
                     position: absolute;
