@@ -41,10 +41,18 @@ class SSIPBackground {
         this.renderer.setClearColor(0x000000, 0);
         this.container.appendChild(this.renderer.domElement);
         
-        // Groups
+        // Groups - offset to the RIGHT side to not overlap text
         this.solarSystem = new THREE.Group();
         this.particleGroup = new THREE.Group();
         this.orbitGroup = new THREE.Group();
+        
+        // Position solar system to the right side of the screen
+        const xOffset = 25; // Move right
+        const zOffset = -20; // Push back
+        this.solarSystem.position.set(xOffset, 0, zOffset);
+        this.orbitGroup.position.set(xOffset, 0, zOffset);
+        this.particleGroup.position.set(xOffset, 0, zOffset);
+        
         this.scene.add(this.solarSystem);
         this.scene.add(this.particleGroup);
         this.scene.add(this.orbitGroup);
@@ -54,67 +62,67 @@ class SSIPBackground {
         // === THE SUN: SSIP ===
         this.sun = new THREE.Group();
         
-        // Core glow
-        const sunCoreGeo = new THREE.SphereGeometry(4, 32, 32);
+        // Core glow - more subtle
+        const sunCoreGeo = new THREE.SphereGeometry(3.5, 32, 32);
         const sunCoreMat = new THREE.MeshBasicMaterial({
             color: 0xf59e0b,
             transparent: true,
-            opacity: 0.9
+            opacity: 0.7
         });
         this.sunCore = new THREE.Mesh(sunCoreGeo, sunCoreMat);
         this.sun.add(this.sunCore);
         
-        // Outer glow layers
+        // Outer glow layers - more subtle
         for (let i = 1; i <= 3; i++) {
-            const glowGeo = new THREE.SphereGeometry(4 + i * 1.5, 32, 32);
+            const glowGeo = new THREE.SphereGeometry(3.5 + i * 1.2, 32, 32);
             const glowMat = new THREE.MeshBasicMaterial({
                 color: 0xfbbf24,
                 transparent: true,
-                opacity: 0.15 / i
+                opacity: 0.1 / i
             });
             const glow = new THREE.Mesh(glowGeo, glowMat);
             this.sun.add(glow);
         }
         
-        // Corona rays
+        // Corona rays - fewer and more subtle
         this.coronaRays = [];
-        const rayCount = 12;
+        const rayCount = 8;
         for (let i = 0; i < rayCount; i++) {
-            const rayGeo = new THREE.ConeGeometry(0.5, 8, 8);
+            const rayGeo = new THREE.ConeGeometry(0.4, 6, 8);
             const rayMat = new THREE.MeshBasicMaterial({
                 color: 0xfcd34d,
                 transparent: true,
-                opacity: 0.3
+                opacity: 0.2
             });
             const ray = new THREE.Mesh(rayGeo, rayMat);
             ray.rotation.z = (i / rayCount) * Math.PI * 2;
-            ray.position.x = Math.cos(ray.rotation.z) * 6;
-            ray.position.y = Math.sin(ray.rotation.z) * 6;
+            ray.position.x = Math.cos(ray.rotation.z) * 5;
+            ray.position.y = Math.sin(ray.rotation.z) * 5;
             ray.rotation.z += Math.PI / 2;
             this.coronaRays.push(ray);
             this.sun.add(ray);
         }
         
         // Inner rotating structure
-        const innerGeo = new THREE.IcosahedronGeometry(2.5, 0);
+        const innerGeo = new THREE.IcosahedronGeometry(2, 0);
         const innerMat = new THREE.MeshBasicMaterial({
             color: 0xffffff,
             wireframe: true,
             transparent: true,
-            opacity: 0.6
+            opacity: 0.4
         });
         this.sunInner = new THREE.Mesh(innerGeo, innerMat);
         this.sun.add(this.sunInner);
         
         this.solarSystem.add(this.sun);
         
-        // === PLANETS ===
+        // === PLANETS === (smaller, more subtle)
         this.planets = [];
         
         const planetData = [
-            { name: 'Janich PRG', color: 0xf59e0b, orbitRadius: 22, speed: 0.008, size: 2.2, startAngle: 0 },
-            { name: 'SYMMIO', color: 0xfbbf24, orbitRadius: 32, speed: 0.012, size: 2.5, startAngle: Math.PI * 2/3 },
-            { name: 'Futarchy', color: 0xfcd34d, orbitRadius: 42, speed: 0.006, size: 2.0, startAngle: Math.PI * 4/3 }
+            { name: 'Janich PRG', color: 0xf59e0b, orbitRadius: 18, speed: 0.006, size: 1.5, startAngle: 0 },
+            { name: 'SYMMIO', color: 0xfbbf24, orbitRadius: 26, speed: 0.009, size: 1.8, startAngle: Math.PI * 2/3 },
+            { name: 'Futarchy', color: 0xfcd34d, orbitRadius: 34, speed: 0.004, size: 1.4, startAngle: Math.PI * 4/3 }
         ];
         
         planetData.forEach((data, index) => {
@@ -128,35 +136,35 @@ class SSIPBackground {
     createPlanet(data) {
         const group = new THREE.Group();
         
-        // Planet core
-        const coreGeo = new THREE.SphereGeometry(data.size, 24, 24);
+        // Planet core - more subtle
+        const coreGeo = new THREE.SphereGeometry(data.size, 16, 16);
         const coreMat = new THREE.MeshBasicMaterial({
             color: data.color,
             transparent: true,
-            opacity: 0.85
+            opacity: 0.6
         });
         const core = new THREE.Mesh(coreGeo, coreMat);
         group.add(core);
         
-        // Planet ring/aura
-        const ringGeo = new THREE.RingGeometry(data.size + 0.5, data.size + 1, 32);
+        // Planet ring/aura - subtle
+        const ringGeo = new THREE.RingGeometry(data.size + 0.3, data.size + 0.6, 24);
         const ringMat = new THREE.MeshBasicMaterial({
             color: data.color,
             transparent: true,
-            opacity: 0.3,
+            opacity: 0.2,
             side: THREE.DoubleSide
         });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.rotation.x = Math.PI / 2;
         group.add(ring);
         
-        // Inner wireframe
-        const wireGeo = new THREE.IcosahedronGeometry(data.size * 0.7, 0);
+        // Inner wireframe - subtle
+        const wireGeo = new THREE.IcosahedronGeometry(data.size * 0.6, 0);
         const wireMat = new THREE.MeshBasicMaterial({
             color: 0xffffff,
             wireframe: true,
             transparent: true,
-            opacity: 0.4
+            opacity: 0.25
         });
         const wire = new THREE.Mesh(wireGeo, wireMat);
         group.add(wire);
@@ -167,18 +175,18 @@ class SSIPBackground {
     }
     
     createOrbits() {
-        // Create visible orbit paths
-        const orbitRadii = [22, 32, 42];
+        // Create visible orbit paths - very subtle
+        const orbitRadii = [18, 26, 34];
         const orbitColors = [0xf59e0b, 0xfbbf24, 0xfcd34d];
         
         orbitRadii.forEach((radius, i) => {
             const curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, Math.PI * 2, false, 0);
-            const points = curve.getPoints(100);
+            const points = curve.getPoints(80);
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const material = new THREE.LineBasicMaterial({
                 color: orbitColors[i],
                 transparent: true,
-                opacity: 0.15
+                opacity: 0.08 // Very subtle
             });
             const orbit = new THREE.Line(geometry, material);
             orbit.rotation.x = Math.PI / 2;
@@ -186,26 +194,26 @@ class SSIPBackground {
         });
         
         // Orbit group tilts slightly for 3D effect
-        this.orbitGroup.rotation.x = 0.3;
-        this.solarSystem.rotation.x = 0.3;
+        this.orbitGroup.rotation.x = 0.4;
+        this.solarSystem.rotation.x = 0.4;
     }
     
     createParticles() {
         this.particles = [];
-        this.particleCount = 150;
+        this.particleCount = 80; // Fewer particles
         
         for (let i = 0; i < this.particleCount; i++) {
-            const size = 0.1 + Math.random() * 0.2;
-            const geo = new THREE.SphereGeometry(size, 8, 8);
+            const size = 0.08 + Math.random() * 0.12; // Smaller particles
+            const geo = new THREE.SphereGeometry(size, 6, 6);
             
             // Particles in amber spectrum
             const hue = 0.08 + Math.random() * 0.06;
-            const color = new THREE.Color().setHSL(hue, 1, 0.6);
+            const color = new THREE.Color().setHSL(hue, 0.9, 0.55);
             
             const mat = new THREE.MeshBasicMaterial({
                 color: color,
                 transparent: true,
-                opacity: 0.4 + Math.random() * 0.4
+                opacity: 0.25 + Math.random() * 0.25 // More subtle
             });
             
             const particle = new THREE.Mesh(geo, mat);
@@ -216,13 +224,13 @@ class SSIPBackground {
             
             if (band === 0) {
                 // Inner particles around sun
-                radius = 8 + Math.random() * 8;
-                orbitSpeed = 0.02 + Math.random() * 0.02;
+                radius = 6 + Math.random() * 6;
+                orbitSpeed = 0.015 + Math.random() * 0.015;
             } else {
-                // Particles in orbital bands
-                const baseRadius = [22, 32, 42][band - 1];
-                radius = baseRadius - 3 + Math.random() * 6;
-                orbitSpeed = [0.008, 0.012, 0.006][band - 1] * (0.8 + Math.random() * 0.4);
+                // Particles in orbital bands (updated radii)
+                const baseRadius = [18, 26, 34][band - 1];
+                radius = baseRadius - 2 + Math.random() * 4;
+                orbitSpeed = [0.006, 0.009, 0.004][band - 1] * (0.8 + Math.random() * 0.4);
             }
             
             const angle = Math.random() * Math.PI * 2;
