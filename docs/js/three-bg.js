@@ -81,35 +81,24 @@ class SSIPBackground {
         this.sunCore = new THREE.Mesh(sunCoreGeo, sunCoreMat);
         this.sun.add(this.sunCore);
         
-        // Outer glow layers - more subtle
-        for (let i = 1; i <= 3; i++) {
-            const glowGeo = new THREE.SphereGeometry(3.5 + i * 1.2, 32, 32);
+        // Radiating glow layers - dynamic pulsing rings
+        this.sunGlowLayers = [];
+        const glowCount = 5;
+        for (let i = 1; i <= glowCount; i++) {
+            const glowGeo = new THREE.SphereGeometry(3.5 + i * 1.5, 32, 32);
             const glowMat = new THREE.MeshBasicMaterial({
-                color: 0xfbbf24,
+                color: i <= 2 ? 0xf59e0b : 0xfbbf24,
                 transparent: true,
-                opacity: 0.1 / i
+                opacity: 0.25 / i
             });
             const glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.userData = { 
+                baseOpacity: 0.3 / i, 
+                layer: i,
+                phaseOffset: i * 0.8 // Different phase for each layer
+            };
+            this.sunGlowLayers.push(glow);
             this.sun.add(glow);
-        }
-        
-        // Corona rays - fewer and more subtle
-        this.coronaRays = [];
-        const rayCount = 8;
-        for (let i = 0; i < rayCount; i++) {
-            const rayGeo = new THREE.ConeGeometry(0.4, 6, 8);
-            const rayMat = new THREE.MeshBasicMaterial({
-                color: 0xfcd34d,
-                transparent: true,
-                opacity: 0.2
-            });
-            const ray = new THREE.Mesh(rayGeo, rayMat);
-            ray.rotation.z = (i / rayCount) * Math.PI * 2;
-            ray.position.x = Math.cos(ray.rotation.z) * 5;
-            ray.position.y = Math.sin(ray.rotation.z) * 5;
-            ray.rotation.z += Math.PI / 2;
-            this.coronaRays.push(ray);
-            this.sun.add(ray);
         }
         
         // Inner rotating structure
@@ -585,12 +574,22 @@ class SSIPBackground {
         this.sunInner.rotation.x += sunRotationSpeed;
         this.sunInner.rotation.y += sunRotationSpeed * 1.5;
         
-        // Animate corona rays - more visible when hovered
-        this.coronaRays.forEach((ray, i) => {
-            const rayPulse = 1 + Math.sin(this.time * 3 + i * 0.5) * 0.3;
-            ray.scale.y = rayPulse;
-            const baseOpacity = sunHovered ? 0.35 : 0.2;
-            ray.material.opacity = baseOpacity + Math.sin(this.time * 2 + i) * 0.15;
+        // Animate radiating glow layers - faster pulsing opacity
+        this.sunGlowLayers.forEach((glow, i) => {
+            const data = glow.userData;
+            // Multiple overlapping sin waves for organic breathing effect
+            const wave1 = Math.sin(this.time * 4 + data.phaseOffset) * 0.5;
+            const wave2 = Math.sin(this.time * 6.5 + data.phaseOffset * 1.3) * 0.3;
+            const wave3 = Math.sin(this.time * 2.5 + data.phaseOffset * 0.7) * 0.2;
+            const combinedWave = (wave1 + wave2 + wave3) / 1.0;
+            
+            // Base opacity varies by layer, increases when hovered
+            const baseOpacity = sunHovered ? data.baseOpacity * 2 : data.baseOpacity;
+            glow.material.opacity = Math.max(0.05, baseOpacity + combinedWave * baseOpacity * 1.5);
+            
+            // Scale slightly with pulse for breathing effect
+            const scalePulse = 1 + combinedWave * 0.08;
+            glow.scale.setScalar(scalePulse);
         });
         
         // === ANIMATE PLANETS ===
