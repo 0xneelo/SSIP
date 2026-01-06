@@ -170,8 +170,8 @@ img {
 }
 
 .nav-container {
-    max-width: 1280px;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     padding: 0 var(--space-xl);
     display: flex;
     align-items: center;
@@ -1098,8 +1098,9 @@ img {
 
 .whitepaper-content {
     margin-left: 280px;
-    padding: var(--space-3xl);
-    max-width: 900px;
+    padding: var(--space-3xl) var(--space-4xl);
+    max-width: none;
+    width: calc(100% - 280px);
 }
 
 .whitepaper-content h1 {
